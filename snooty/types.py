@@ -109,6 +109,7 @@ class Diagnostic:
     def severity(self) -> Level:
         raise TypeError("Cannot access the severity of an abstract base Diagnostic")
 
+
 class ParserDiagnostic(Diagnostic):
 
     pass
@@ -141,7 +142,7 @@ class OptionsNotSupported(ParserDiagnostic):
     severity = Diagnostic.Level.error
 
 
-class MergeConflictArtifcat(ParserDiagnostic):
+class GitMergeConflictArtifactFound(ParserDiagnostic):
     severity = Diagnostic.Level.error
 
 
@@ -450,10 +451,6 @@ class PendingTask:
         """Perform an action in the main process once the tree has been built."""
         pass
 
-    def error(self, message: str) -> Diagnostic:
-        """Create an error diagnostic associated with this task's node."""
-        return Diagnostic_Error(message, self.node.start[0])
-
 
 @dataclass
 class Page:
@@ -544,7 +541,7 @@ class ProjectConfig:
             except FileNotFoundError:
                 pass
             except LoadError as err:
-                diagnostics.append(Diagnostic_Error(str(err), 0))
+                diagnostics.append(LoadError(str(err), 0))
 
             path = path.parent
 
@@ -575,7 +572,7 @@ class ProjectConfig:
         if match_found:
             for match in match_found:
                 lineno = text.count("\n", 0, match.start())
-                diagnostics.append(Diagnostic_Error("git merge conflict found", lineno))
+                diagnostics.append(GitMergeConflictArtifactFound("git merge conflict found", lineno))
 
         return (text, diagnostics)
 
@@ -592,7 +589,7 @@ class ProjectConfig:
             except KeyError:
                 lineno = source.count("\n", 0, match.start())
                 diagnostics.append(
-                    Diagnostic_Error(
+                    VariableNotDeclaredConstant(
                         f"{variable_name} not defined as a source constant", lineno
                     )
                 )
